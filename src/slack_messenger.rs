@@ -87,8 +87,8 @@ fn format_message(curr_work: &sheets_reader::CurrentWork) -> String {
 fn date_today_to_string() -> String {
     let curr_time = chrono::offset::Local::now();
     let year = curr_time.year().to_string();
-    let month = curr_time.month().to_string();
-    let day = curr_time.day().to_string();
+    let month = format!("{:0>2}", curr_time.month().to_string());
+    let day = format!("{:0>2}", curr_time.day().to_string());
 
     format!("{year}{month}{day}")
 }
