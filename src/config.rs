@@ -7,7 +7,7 @@ pub struct Config {
     pub slack_error_channel_id: String,
     pub priv_key: String,
     pub sheets_id: String,
-    pub deposit_range_input: String
+    pub sheet_range: String
 }
 
 impl Config {
@@ -19,7 +19,7 @@ impl Config {
         let slack_error_channel_id = env::var("SLACK_ERROR_CHANNEL_ID").expect("The SLACK_ERROR_CHANNEL_ID env variable is not set.");
         let priv_key = String::from("priv_key.json");
         let sheets_id = env::var("SHEETS_ID").expect("The SHEETS_ID env variable is not set.");
-        let deposit_range_input = env::var("DEPOSIT_RANGE_INPUT").expect("The DEPOSIT_RANGE_INPUT env variable is not set.");
+        let sheet_range = env::var("SHEET_RANGE").expect("The SHEET_RANGE env variable is not set.");
 
         Config {
             slack_bot_token,
@@ -27,7 +27,7 @@ impl Config {
             slack_error_channel_id,
             priv_key,
             sheets_id,
-            deposit_range_input
+            sheet_range
         }
     }
 }

@@ -16,7 +16,11 @@ async fn handler(event: LambdaEvent<serde_json::Value>) -> Result<serde_json::Va
 async fn main() -> Result<(), Error> {
     // lambda_runtime::run(service_fn(handler)).await
     let config = config::Config::init();
-    slack_messenger::send_message_err(&config, "I couldn't send a message".to_string()).await;
+    // slack_messenger::send_message_err(&config, "I couldn't send a message".to_string()).await;
+    //
+    // return Ok(());
+
+
     let client = http_client::http_client();
     let auth = auth::auth(&config, client.clone()).await;
     let hub = google_sheets4::Sheets::new(client.clone(), auth);

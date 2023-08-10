@@ -6,7 +6,7 @@ use chrono::Datelike;
 
 const SLACK_URL: &str = "https://slack.com/api/chat.postMessage";
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 struct SlackMessage {
     channel: String,
     text: String
@@ -24,6 +24,7 @@ pub async fn send_message_ok(config: &config::Config, curr_work: &sheets_reader:
 
     let client = reqwest::Client::new();
     if let Err(err) = client.post(SLACK_URL)
+        .header("Content-type", "application/json".to_string())
         .header("AUTHORIZATION", format!("Bearer {bot_token}"))
         .json(&msg)
         .send()
@@ -35,15 +36,18 @@ pub async fn send_message_ok(config: &config::Config, curr_work: &sheets_reader:
 
 pub async fn send_message_err(config: &config::Config, err: String) {
     let bot_token = config.slack_bot_token.clone();
-    let err_text = format!("Encountered the following error while generating the daily report:\n{err}");
+    let err_text = format!("Encountered the following error while generating the daily report:\n```{err}```");
 
     let msg = SlackMessage {
         channel: config.slack_error_channel_id.clone(),
         text: err_text
     };
 
+    println!("{:?}", msg);
+
     let client = reqwest::Client::new();
     let res = client.post(SLACK_URL)
+        .header("Content-type", "application/json".to_string())
         .header("AUTHORIZATION", format!("Bearer {bot_token}"))
         .json(&msg)
         .send()
@@ -54,7 +58,12 @@ pub async fn send_message_err(config: &config::Config, err: String) {
             let err = format!("{:?}", err);
             panic!("{}", err);
         },
-        Ok(res) => println!("{:?}", res)
+        Ok(res) => {
+            match res.status().is_success() {
+                true => println!("successfully sent message"),
+                false => println!("error sending message")
+            }
+        }
     };
 
 }
@@ -72,7 +81,7 @@ fn format_message(curr_work: &sheets_reader::CurrentWork) -> String {
         "".to_string()
     };
 
-    format!("{date}\n■前日の作業内容{yest}■当日の作業予定{today}\n■作業内容や進捗についての問題点\n■その他連絡事項")
+    format!("```{date} 日報\n■前日の作業内容\n{yest}■当日の作業予定\n{today}■作業内容や進捗についての問題点\n■その他連絡事項```")
 }
 
 fn date_today_to_string() -> String {

@@ -13,7 +13,7 @@ pub async fn read(
     hub: &google_sheets4::Sheets<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>
 ) -> Result<(hyper::Response<hyper::Body>, google_sheets4::api::ValueRange), google_sheets4::Error> {
     hub.spreadsheets()
-        .values_get(&config.sheets_id, &config.deposit_range_input)
+        .values_get(&config.sheets_id, &config.sheet_range)
         .doit()
         .await
 }
@@ -28,21 +28,22 @@ pub fn get_current_work(data: Vec<Vec<serde_json::Value>>) -> Result<CurrentWork
     };
 
     for row in data.iter() {
-        let day_num = serde_json::from_value::<u32>(row[2].clone())?;
+        let day_num = serde_json::from_value::<String>(row[1].clone())?;
+        let day_num = if day_num.trim().is_empty() { 0 } else { day_num.parse::<u32>()? };
         if day_num == today {
             let task_list = serde_json::from_value::<String>(row[7].clone())?;
-            let task_list = csv_to_vec(task_list);
-
-            curr_work.today = Some(task_list);
+            if let Some(tasks) = csv_to_vec(task_list) {
+                curr_work.today = Some(tasks);
+            }
 
             return Ok(curr_work);
         }
 
         if day_num == yesterday {
             let task_list = serde_json::from_value::<String>(row[7].clone())?;
-            let task_list = csv_to_vec(task_list);
-
-            curr_work.yesterday = Some(task_list);
+            if let Some(tasks) = csv_to_vec(task_list) {
+                curr_work.yesterday = Some(tasks);
+            }
         }
 
     };
@@ -50,15 +51,18 @@ pub fn get_current_work(data: Vec<Vec<serde_json::Value>>) -> Result<CurrentWork
     Err("Today is beyond the range of the sheet".into())
 }
 
-fn csv_to_vec(task_list: String) -> Vec<String> {
-    task_list.split(",")
+fn csv_to_vec(task_list: String) -> Option<Vec<String>> {
+    if task_list.trim().is_empty() {
+        return None
+    }
+    Some(task_list.split(",")
         .collect::<Vec<&str>>()
         .iter()
         .map(|task| return String::from(*task))
-        .collect::<Vec<String>>()
+        .collect::<Vec<String>>())
 }
 
 fn get_day() -> u32 {
     let curr_time = chrono::offset::Local::now();
-    curr_time.day0()
+    curr_time.day()
 }
