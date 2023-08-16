@@ -18,6 +18,7 @@ pub async fn read(
         .await
 }
 
+// TODO grab previous month's sheet if yesterday is less than 0
 pub fn get_current_work(data: Vec<Vec<serde_json::Value>>) -> Result<CurrentWork, Box<dyn std::error::Error>> {
     let today = get_day();
     let yesterday = if today > 0 { today - 1 } else { 0 };
@@ -31,7 +32,7 @@ pub fn get_current_work(data: Vec<Vec<serde_json::Value>>) -> Result<CurrentWork
         let day_num = serde_json::from_value::<String>(row[1].clone())?;
         let day_num = if day_num.trim().is_empty() { 0 } else { day_num.parse::<u32>()? };
         if day_num == today {
-            let task_list = serde_json::from_value::<String>(row[7].clone())?;
+            let task_list = get_daily_task_list(row)?;
             if let Some(tasks) = csv_to_vec(task_list) {
                 curr_work.today = Some(tasks);
             }
@@ -40,7 +41,7 @@ pub fn get_current_work(data: Vec<Vec<serde_json::Value>>) -> Result<CurrentWork
         }
 
         if day_num == yesterday {
-            let task_list = serde_json::from_value::<String>(row[7].clone())?;
+            let task_list = get_daily_task_list(row)?;
             if let Some(tasks) = csv_to_vec(task_list) {
                 curr_work.yesterday = Some(tasks);
             }
@@ -49,6 +50,16 @@ pub fn get_current_work(data: Vec<Vec<serde_json::Value>>) -> Result<CurrentWork
     };
 
     Err("Today is beyond the range of the sheet".into())
+}
+
+fn get_daily_task_list(row: &Vec<serde_json::Value>) -> Result<String, Box<dyn std::error::Error>> {
+    let mut task_list = "".to_string();
+    for i in 8..=10 {
+        let frag_task_list = serde_json::from_value::<String>(row[i].clone())?;
+        task_list.push_str(frag_task_list.as_str());
+    }
+
+    Ok(task_list)
 }
 
 fn csv_to_vec(task_list: String) -> Option<Vec<String>> {

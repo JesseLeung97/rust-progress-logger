@@ -21,7 +21,6 @@ pub async fn send_message_ok(config: &config::Config, curr_work: &sheets_reader:
         text
     };
 
-
     let client = reqwest::Client::new();
     if let Err(err) = client.post(SLACK_URL)
         .header("Content-type", "application/json".to_string())
@@ -42,8 +41,6 @@ pub async fn send_message_err(config: &config::Config, err: String) {
         channel: config.slack_error_channel_id.clone(),
         text: err_text
     };
-
-    println!("{:?}", msg);
 
     let client = reqwest::Client::new();
     let res = client.post(SLACK_URL)
